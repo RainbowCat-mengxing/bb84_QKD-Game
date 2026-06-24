@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="基于 BB84 协议的交互式量子密钥分发小游戏">
+  <title>量子密钥局 · BB84 交互实验</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="返回游戏顶部">
+      <span class="brand-mark" aria-hidden="true">Q</span>
+      <span><strong>量子密钥局</strong><small>BB84 INTERACTIVE LAB</small></span>
+    </a>
+    <div class="top-actions">
+      <button class="ghost-button" id="theoryButton" type="button">协议速查</button>
+      <div class="score-chip"><span>总分</span><strong id="totalScore">0</strong></div>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">QUANTUM CHANNEL / CLASSICAL DECISION</p>
+        <h1>选一个身份，<br><span>守住或截获这串密钥。</span></h1>
+        <p class="hero-copy">你控制选基、信道噪声、抽样比例和窃听策略。量子态会按 BB84 的测量规则真实坍缩，最终由你的判断决定本局成败。</p>
+      </div>
+      <div class="protocol-orbit" aria-label="Alice 经量子信道向 Bob 发送量子态，Eve 可能位于信道中间">
+        <div class="orbit-line"></div>
+        <div class="agent-node alice-node"><span>A</span><small>Alice</small></div>
+        <div class="photon"><i></i></div>
+        <div class="agent-node eve-node"><span>E</span><small>Eve</small></div>
+        <div class="agent-node bob-node"><span>B</span><small>Bob</small></div>
+      </div>
+    </section>
+
+    <section class="role-section" aria-labelledby="roleTitle">
+      <div class="section-heading">
+        <div><span class="step-number">01</span><h2 id="roleTitle">选择角色</h2></div>
+        <p>角色决定你能看到的信息和最后要做的决策。</p>
+      </div>
+      <div class="role-grid" id="roleGrid">
+        <button class="role-card selected" type="button" data-role="alice" aria-pressed="true">
+          <span class="role-icon">A</span>
+          <span class="role-copy"><strong>信源 Alice</strong><small>准备随机密钥与量子态；根据 QBER 判断是否中止。</small></span>
+          <span class="role-tag defender">守方</span>
+        </button>
+        <button class="role-card" type="button" data-role="bob" aria-pressed="false">
+          <span class="role-icon">B</span>
+          <span class="role-copy"><strong>信宿 Bob</strong><small>选择测量基并筛选密钥；识破 Eve 可获得高分。</small></span>
+          <span class="role-tag defender">守方</span>
+        </button>
+        <button class="role-card" type="button" data-role="eve" aria-pressed="false">
+          <span class="role-icon">E</span>
+          <span class="role-copy"><strong>窃听者 Eve <em>（Eye）</em></strong><small>拦截、测量并重发；在扰动暴露前窃取密钥。</small></span>
+          <span class="role-tag attacker">攻方</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="console-section" aria-labelledby="consoleTitle">
+      <div class="section-heading">
+        <div><span class="step-number">02</span><h2 id="consoleTitle">配置任务</h2></div>
+        <p id="roleHint">你扮演 Alice：重点控制原始密钥与制备基。</p>
+      </div>
+
+      <div class="console-grid">
+        <article class="panel message-panel">
+          <div class="panel-title-row">
+            <div><p class="panel-kicker">MESSAGE PAYLOAD</p><h3>待保护消息</h3></div>
+            <div class="segmented" role="group" aria-label="消息编码">
+              <button class="active" type="button" data-encoding="utf8">UTF-8</button>
+              <button type="button" data-encoding="ascii">ASCII</button>
+              <button type="button" data-encoding="binary">比特</button>
+            </div>
+          </div>
+          <label class="sr-only" for="messageInput">待保护消息</label>
+          <textarea id="messageInput" maxlength="96" rows="3">量子通信，保持警觉！</textarea>
+          <div class="bit-preview-wrap">
+            <div class="bit-meta"><span id="byteCount">0 字节</span><span id="bitCount">0 bits</span></div>
+            <code id="bitPreview">—</code>
+          </div>
+          <p class="field-help">协议模式：量子信道分发随机密钥，消息比特在筛基后使用一次一密加密，并不直接编码到光子上。</p>
+        </article>
+
+        <article class="panel strategy-panel">
+          <div class="panel-title-row">
+            <div><p class="panel-kicker">BASIS CONTROL</p><h3>选基策略</h3></div>
+            <div class="basis-legend"><span><i class="basis-z">+</i> Z 基</span><span><i class="basis-x">×</i> X 基</span></div>
+          </div>
+          <div class="strategy-fields">
+            <label>Alice 制备基<select id="aliceStrategy">
+              <option value="random">随机 Z / X</option><option value="z">全部 Z</option><option value="x">全部 X</option><option value="alternating">交替 Z / X</option>
+            </select></label>
+            <label>Bob 测量基<select id="bobStrategy">
+              <option value="random">随机 Z / X</option><option value="z">全部 Z</option><option value="x">全部 X</option><option value="alternating">交替 Z / X</option>
+            </select></label>
+            <label>Eve 测量基<select id="eveStrategy">
+              <option value="random">随机 Z / X</option><option value="z">全部 Z</option><option value="x">全部 X</option><option value="alternating">交替 Z / X</option>
+            </select></label>
+          </div>
+          <p class="field-help" id="manualHint">建立信道后，你还可以逐个修改前 96 个光子的 Alice 制备基。</p>
+        </article>
+
+        <article class="panel advanced-panel">
+          <div class="panel-title-row">
+            <div><p class="panel-kicker">CHANNEL MODEL</p><h3>信道与抽样</h3></div>
+            <button class="text-button" id="resetSettings" type="button">恢复默认</button>
+          </div>
+          <div class="range-field"><div><label for="noiseRate">固有噪声</label><output id="noiseOutput">1%</output></div><input id="noiseRate" type="range" min="0" max="15" value="1"></div>
+          <div class="range-field"><div><label for="sampleRate">公开抽样</label><output id="sampleOutput">25%</output></div><input id="sampleRate" type="range" min="10" max="50" value="25"></div>
+          <div class="range-field"><div><label for="thresholdRate">中止警戒线</label><output id="thresholdOutput">15%</output></div><input id="thresholdRate" type="range" min="5" max="30" value="15"></div>
+          <div class="two-fields">
+            <label>Eve 是否出现<select id="eveMode"><option value="random">未知随机（55%）</option><option value="yes">强制出现</option><option value="no">确保不出现</option></select></label>
+            <label>拦截比例 <span id="attackLabel">75%</span><input id="attackRate" type="range" min="0" max="100" value="75"></label>
+          </div>
+        </article>
+      </div>
+
+      <div class="primary-action-row">
+        <button class="primary-button" id="prepareButton" type="button"><span>建立量子信道</span><b>→</b></button>
+        <p id="validationMessage" role="alert"></p>
+      </div>
+    </section>
+
+    <section class="workspace hidden" id="workspace" aria-labelledby="workspaceTitle">
+      <div class="section-heading">
+        <div><span class="step-number">03</span><h2 id="workspaceTitle">你的量子操作台</h2></div>
+        <p id="workspaceSummary">点击单元格可更换测量基。</p>
+      </div>
+      <div class="workspace-toolbar">
+        <div><strong id="photonCount">0</strong><span>计划光子数</span></div>
+        <div><strong id="requiredKeyCount">0</strong><span>消息密钥位</span></div>
+        <div class="toolbar-actions">
+          <button class="small-button" type="button" data-fill="random">重新随机</button>
+          <button class="small-button" type="button" data-fill="z">全部 Z</button>
+          <button class="small-button" type="button" data-fill="x">全部 X</button>
+          <button class="small-button" type="button" data-fill="alternating">交替</button>
+        </div>
+      </div>
+      <div class="photon-grid" id="photonGrid"></div>
+      <p class="grid-note" id="gridNote">为保持界面清晰，仅展开前 96 个光子；其余光子沿用所选策略。</p>
+      <div class="primary-action-row">
+        <button class="primary-button danger-glow" id="transmitButton" type="button"><span>发射并公开筛基</span><b>↗</b></button>
+        <button class="ghost-button" id="cancelPlanButton" type="button">返回配置</button>
+      </div>
+    </section>
+
+    <section class="result-section hidden" id="resultSection" aria-labelledby="resultTitle">
+      <div class="section-heading">
+        <div><span class="step-number">04</span><h2 id="resultTitle">公开信道分析</h2></div>
+        <p>抽样位已经公开并丢弃；只依据下列公开信息作出判断。</p>
+      </div>
+      <div class="metric-grid">
+        <article class="metric-card"><span>筛后密钥</span><strong id="siftedMetric">0</strong><small>基选择一致的位数</small></article>
+        <article class="metric-card"><span>抽样错误</span><strong id="errorMetric">0 / 0</strong><small>公开比较结果</small></article>
+        <article class="metric-card qber-card"><span>QBER</span><strong id="qberMetric">0%</strong><small id="thresholdMetric">警戒线 15%</small></article>
+        <article class="metric-card"><span>可用密钥</span><strong id="keyMetric">0</strong><small id="keyState">等待检查</small></article>
+      </div>
+
+      <article class="panel decision-panel" id="decisionPanel">
+        <div><p class="panel-kicker">YOUR VERDICT</p><h3 id="decisionTitle">是否存在窃听？</h3><p id="decisionCopy">QBER 会受 Eve 和少量信道噪声共同影响。判断错误将失去本局分数。</p></div>
+        <div class="decision-actions">
+          <button class="abort-button" id="abortButton" type="button">判定有窃听 · 中止</button>
+          <button class="continue-button" id="continueButton" type="button">判定安全 · 继续</button>
+        </div>
+      </article>
+
+      <article class="panel trace-panel">
+        <div class="panel-title-row"><div><p class="panel-kicker">PHOTON TRACE</p><h3>光子轨迹（前 40 位）</h3></div><span class="trace-lock" id="traceLock">Eve 轨迹将在决策后揭晓</span></div>
+        <div class="trace-scroll"><table><thead><tr><th>#</th><th>Alice</th><th>制备基</th><th>Eve</th><th>Bob 基</th><th>测量</th><th>去向</th></tr></thead><tbody id="traceBody"></tbody></table></div>
+      </article>
+      <div class="primary-action-row"><button class="ghost-button" id="newRoundButton" type="button">开始新一局</button></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>BB84 交互实验 · 本地运行，不上传消息</span>
+    <span>依据课程 PPT 与 Bennett–Brassard 原始协议</span>
+  </footer>
+
+  <dialog id="theoryDialog" class="theory-dialog">
+    <form method="dialog"><button class="dialog-close" aria-label="关闭">×</button></form>
+    <p class="panel-kicker">PROTOCOL CHEAT SHEET</p><h2>为什么 Eve 会留下痕迹？</h2>
+    <div class="theory-bases"><div><b>+</b><span><strong>Z 基</strong><small>0 → |0⟩（0°）<br>1 → |1⟩（90°）</small></span></div><div><b>×</b><span><strong>X 基</strong><small>0 → |+⟩（45°）<br>1 → |−⟩（135°）</small></span></div></div>
+    <ol><li>Alice 用随机比特和随机基制备量子态。</li><li>Bob 随机选基测量；选错基时结果等概率随机。</li><li>双方公开基而不公开结果，只保留基一致的位。</li><li>公开一部分筛后位，估计量子比特误码率 QBER。</li><li>Eve 拦截—重发时，满拦截在筛后密钥上引入约 25% QBER。</li><li>若误码可接受，实际协议还需纠错与隐私放大；本游戏将其合并为一步。</li></ol>
+    <p class="theory-note">注意：25% 是理想“全量拦截—重发”的期望扰动，不是普适安全阈值。游戏警戒线可调，用来体验有限抽样和噪声导致的判断风险。</p>
+    <div class="source-links"><a href="https://arxiv.org/abs/2003.06557" target="_blank" rel="noreferrer">BB84 原始论文扫描 ↗</a><a href="https://quantum.cloud.ibm.com/learning/en" target="_blank" rel="noreferrer">IBM Quantum Learning ↗</a></div>
+  </dialog>
+
+  <dialog id="outcomeDialog" class="outcome-dialog">
+    <div class="outcome-symbol" id="outcomeSymbol">✓</div><p class="panel-kicker" id="outcomeKicker">ROUND COMPLETE</p><h2 id="outcomeTitle">判断正确</h2><p id="outcomeCopy"></p><div class="outcome-stats" id="outcomeStats"></div><form method="dialog"><button class="primary-button" id="outcomeClose" value="close">查看完整轨迹</button></form>
+  </dialog>
+
+  <script src="bb84.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
